@@ -1,7 +1,7 @@
 var request = require('request')
 var cheerio = require('cheerio')
 
-
+var token = 'YWMtu94ZysPDEeSdcoVXW_JxVwAAAUwRqMmNhwTJ3YnE3lLcfP2oPw3szcPli8g'
 var urlSessions = 'http://devnexus.com/s/presentations'
 
 request(urlSessions, function(err, resp, body) {
@@ -10,6 +10,9 @@ request(urlSessions, function(err, resp, body) {
       $sessions = $body.find('.masonryitem')
   var slotSeparators = [',', '\\|'];
   var sessionCount = 0
+
+  var rooms = []
+  var timeslots = []
 
 
   $sessions.each(function(i, item) {
@@ -29,6 +32,12 @@ request(urlSessions, function(err, resp, body) {
     var time = slotTokens[1].trim()
     var room = slotTokens[2].trim()
 
+    // rely on the unique name property to prevent duplicate rooms and timeslots
+    var timeslot = {name: date+' '+time, date: date, time: time}
+    timeslots.push(timeslot)
+    var room = {name: room, room: room}
+    rooms.push(room)
+
     // split by commas
     var tagsTokens = $(rows[3]).text().trim().split(',')
     var tags = '|'
@@ -41,7 +50,7 @@ request(urlSessions, function(err, resp, body) {
       uri: 'https://api.usergrid.com/devnexus/2015/sessions',
       method: 'POST',
       auth: {
-        bearer: 'YWMtxoL57sOwEeSMH2_nVDjglAAAAUwRLIqZmpMxFp21w5UQ2KjtBtfq_Kcv-S4'
+        bearer: token
       },
       json: {
         name: title,
@@ -67,4 +76,41 @@ request(urlSessions, function(err, resp, body) {
   })
 
   console.log(sessionCount+' sessions')
+
+  //////////////////////////////////////////////////////////////////////////////
+  // POST timeslots and rooms
+  console.log(timeslots.length+' timeslots, '+rooms.length+' rooms')
+
+  // create all timeslots with a single POST
+  var options = {
+    uri: 'https://api.usergrid.com/devnexus/2015/timeslots',
+    method: 'POST',
+    auth: {
+      bearer: token
+    },
+    json: timeslots
+  }
+
+  request(options, function(err, resp, body) {
+    if( err || resp.statusCode !== 200 ) {
+      console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
+    }
+  })
+
+  //////////////////////////////////////////////////////////////////////////////
+  // create all rooms with a single POST
+  var options = {
+    uri: 'https://api.usergrid.com/devnexus/2015/rooms',
+    method: 'POST',
+    auth: {
+      bearer: token
+    },
+    json: rooms
+  }
+
+  request(options, function(err, resp, body) {
+    if( err || resp.statusCode !== 200 ) {
+      console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
+    }
+  })
 })
