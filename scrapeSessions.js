@@ -18,6 +18,7 @@ request(urlSessions, function(err, resp, body) {
   $sessions.each(function(i, item) {
     var speaker = $(item).find('.img-circle').attr('alt')
     var title = $(item).find('.presentation-title').text().trim()
+    var sessionName = title.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"")
     var desc = $(item).find('.col-xs-12 p').text().trim()
 
     // for the session attributes, get the collection of rows
@@ -40,9 +41,9 @@ request(urlSessions, function(err, resp, body) {
 
     // split by commas
     var tagsTokens = $(rows[3]).text().trim().split(',')
-    var tags = '|'
+    var tags = '~'
     tagsTokens.forEach(function(elem, i){
-      tags += elem.trim() + '|'
+      tags += elem.trim() + '~'
     })
 
     // use the API to create each session entity
@@ -53,7 +54,7 @@ request(urlSessions, function(err, resp, body) {
         bearer: token
       },
       json: {
-        name: title,
+        name: sessionName,
         title: title,
         speaker: speaker,
         description: desc,
@@ -68,7 +69,7 @@ request(urlSessions, function(err, resp, body) {
 
     request(options, function(err, resp, body) {
       if( err || resp.statusCode !== 200 ) {
-        console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
+//        console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
       }
     })
 
@@ -81,46 +82,48 @@ request(urlSessions, function(err, resp, body) {
 
     // associate session with speaker
     options = {
-      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+title+'/by/speakers/'+speaker,
+      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+sessionName+'/by/speakers/'+speaker,
       method: 'POST',
       auth: {
         bearer: token
       }
     }
-    console.log('connecting '+title+' to '+speaker)
+    console.log('connecting '+sessionName+' to '+speaker)
     request(options, function(err, resp, body) {
       if( err || resp.statusCode !== 200 ) {
+        console.log('could not connect '+sessionName+' with speaker '+speaker)
         console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
       }
     })
 
     // associate session with room
     options = {
-      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+title+'/in/rooms/'+room,
+      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+sessionName+'/in/rooms/'+room,
       method: 'POST',
       auth: {
         bearer: token
       }
     }
-    console.log('connecting '+title+' to '+room)
+    console.log('connecting '+sessionName+' to '+room)
     request(options, function(err, resp, body) {
       if( err || resp.statusCode !== 200 ) {
+        console.log('could not connect '+sessionName+' with room '+room)
         console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
       }
     })
 
     // associate session with timeslot
     options = {
-      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+title+'/at/timeslots/'+timeslotObj.name,
+      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+sessionName+'/at/timeslots/'+timeslotObj.name,
       method: 'POST',
       auth: {
         bearer: token
       }
     }
-    console.log('connecting '+title+' to '+timeslotObj.name)
+    console.log('connecting '+sessionName+' to '+timeslotObj.name)
     request(options, function(err, resp, body) {
       if( err || resp.statusCode !== 200 ) {
-        console.log('could not connect '+title+' with timeslot '+timeslotObj.name)
+        console.log('could not connect '+sessionName+' with timeslot '+timeslotObj.name)
         console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
       }
     })

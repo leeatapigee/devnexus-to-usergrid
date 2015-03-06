@@ -48,11 +48,9 @@ request(urlSpeakers, function(err, resp, body) {
     }
 
     // TODO the inserts work, but there are async issues with the console output
-    client.createEntity(options, function(err, speakerEntity) {
+    client.createEntity(options, function(err, result) {
       if( err ) {
-        console.log(speakerCount+'  error: '+err)
-      } else {
-        console.log(speakerCount+'  '+speakerEntity.uuid+'='+speakerEntity.name)
+        console.log(speakerCount+'  error: '+err+'  speaker '+speaker)
       }
     })
   })
