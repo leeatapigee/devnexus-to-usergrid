@@ -33,10 +33,10 @@ request(urlSessions, function(err, resp, body) {
     var room = slotTokens[2].trim()
 
     // rely on the unique name property to prevent duplicate rooms and timeslots
-    var timeslot = {name: date+' '+time, date: date, time: time}
-    timeslots.push(timeslot)
-    var room = {name: room, room: room}
-    rooms.push(room)
+    var timeslotObj = {name: date.replace(/\D/g, '')+' '+time.replace(/\D/g, ''), date: date, time: time}
+    timeslots.push(timeslotObj)
+    var roomObj = {name: room, room: room}
+    rooms.push(roomObj)
 
     // split by commas
     var tagsTokens = $(rows[3]).text().trim().split(',')
@@ -73,6 +73,58 @@ request(urlSessions, function(err, resp, body) {
     })
 
     ++sessionCount
+
+    ////////////////////////////////////////////////////////////////////////////
+    // create relationships
+    // NOTE: The speakers, timeslots, and rooms collections must have already
+    // been created for these connections to be made.
+
+    // associate session with speaker
+    options = {
+      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+title+'/by/speakers/'+speaker,
+      method: 'POST',
+      auth: {
+        bearer: token
+      }
+    }
+    console.log('connecting '+title+' to '+speaker)
+    request(options, function(err, resp, body) {
+      if( err || resp.statusCode !== 200 ) {
+        console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
+      }
+    })
+
+    // associate session with room
+    options = {
+      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+title+'/in/rooms/'+room,
+      method: 'POST',
+      auth: {
+        bearer: token
+      }
+    }
+    console.log('connecting '+title+' to '+room)
+    request(options, function(err, resp, body) {
+      if( err || resp.statusCode !== 200 ) {
+        console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
+      }
+    })
+
+    // associate session with timeslot
+    options = {
+      uri: 'https://api.usergrid.com/devnexus/2015/sessions/'+title+'/at/timeslots/'+timeslotObj.name,
+      method: 'POST',
+      auth: {
+        bearer: token
+      }
+    }
+    console.log('connecting '+title+' to '+timeslotObj.name)
+    request(options, function(err, resp, body) {
+      if( err || resp.statusCode !== 200 ) {
+        console.log('could not connect '+title+' with timeslot '+timeslotObj.name)
+        console.log(resp.statusCode+': '+err+'\n'+JSON.stringify(body))
+      }
+    })
+
   })
 
   console.log(sessionCount+' sessions')
