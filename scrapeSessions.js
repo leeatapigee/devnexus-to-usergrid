@@ -4,6 +4,22 @@ var cheerio = require('cheerio')
 var token = 'YWMtu94ZysPDEeSdcoVXW_JxVwAAAUwRqMmNhwTJ3YnE3lLcfP2oPw3szcPli8g'
 var urlSessions = 'http://devnexus.com/s/presentations'
 
+
+function dateAsLong(date, time) {
+  // only supports date in format 3/10 and time in format 9:00 AM - big cheat
+  var d = date.split('/')
+  var t = time.split(':')
+  var fullDate = '2015-0'+d[0]+'-'+d[1]+'T'
+  var hour = parseInt(t[0])
+  var t2 = t[1].split(' ')
+  if( t2[1] === 'PM' )
+    hour += 12
+  fullDate += (hour<10?'0':'') + hour+':'+t2[0]+':00Z'
+  console.log('>>>>>>>>>>> ', date, time, fullDate, Date.parse(fullDate))
+  return Date.parse(fullDate)
+}
+
+
 request(urlSessions, function(err, resp, body) {
   var $ = cheerio.load(body),
       $body = $('body'),
@@ -34,7 +50,12 @@ request(urlSessions, function(err, resp, body) {
     var room = slotTokens[2].trim()
 
     // rely on the unique name property to prevent duplicate rooms and timeslots
-    var timeslotObj = {name: date.replace(/\D/g, '')+' '+time.replace(/\D/g, ''), date: date, time: time}
+    var timeslotObj = {
+      name: date.replace(/\D/g, '')+' '+time.replace(/\D/g, ''),
+      date: date,
+      time: time,
+      millis: dateAsLong(date, time)
+    }
     timeslots.push(timeslotObj)
     var roomObj = {name: room, room: room}
     rooms.push(roomObj)
@@ -62,6 +83,7 @@ request(urlSessions, function(err, resp, body) {
         skill: skill,
         date: date,
         time: time,
+        millis: dateAsLong(date, time),
         room: room,
         tags: tags
       }
